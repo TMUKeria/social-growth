@@ -36,6 +36,7 @@ Supabase SQL Editor에서 `supabase/migrations/202608180001_initial_schema.sql`�
 - [x] Supabase 브라우저/서버 클라이언트
 - [x] 이메일 로그인 UI
 - [x] 이메일 회원가입 및 로그아웃
+- [x] 비밀번호 확인 및 이메일 인증 결과 화면
 - [x] 세션 유지와 교사 전용 대시보드 보호
 - [x] 초기 DB 및 RLS 설계
 - [ ] Google 로그인
