@@ -39,6 +39,8 @@ export function AuthForm() {
 
         if (error) {
           setMessage(toKoreanError(error.message));
+        } else if (data.user?.identities?.length === 0) {
+          setMessage("이미 가입된 이메일입니다. 로그인하거나 비밀번호를 재설정해 주세요.");
         } else if (data.session) {
           router.push("/dashboard");
           router.refresh();
@@ -131,6 +133,7 @@ function toKoreanError(message: string) {
     "Email not confirmed": "이메일 인증을 먼저 완료해 주세요.",
     "User already registered": "이미 가입된 이메일입니다.",
     "Password should be at least 6 characters": "비밀번호는 6자 이상이어야 합니다.",
+    "Email rate limit exceeded": "인증 메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.",
   };
 
   return errors[message] ?? message;
