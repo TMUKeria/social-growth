@@ -45,6 +45,7 @@ Supabase SQL Editor에서 `supabase/migrations/202608180001_initial_schema.sql`�
 - [x] 초기 DB 및 RLS 설계
 - [ ] Google 로그인
 - [ ] 교사 대시보드와 시나리오 편집기
+- [x] 교사 시나리오 목록 및 기본 정보 생성
 - [ ] 동적 학생 플레이 엔진과 TTS
 - [ ] 공유 URL과 QR 코드
 - [ ] 접근성 테스트 및 Vercel 배포
