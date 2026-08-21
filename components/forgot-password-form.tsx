@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createRecoveryClient } from "@/lib/supabase/recovery-client";
 
 export function ForgotPasswordForm() {
   const [message, setMessage] = useState("");
@@ -15,7 +15,7 @@ export function ForgotPasswordForm() {
 
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email"));
-    const supabase = createClient();
+    const supabase = createRecoveryClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/update-password`,
     });

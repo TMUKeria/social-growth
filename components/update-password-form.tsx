@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createRecoveryClient } from "@/lib/supabase/recovery-client";
 
 type ResetStatus = "checking" | "ready" | "saving" | "success" | "error";
 
@@ -12,23 +12,9 @@ export function UpdatePasswordForm() {
 
   useEffect(() => {
     let active = true;
-    const supabase = createClient();
+    const supabase = createRecoveryClient();
 
     async function prepareReset() {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!active) return;
-
-        if (error) {
-          setStatus("error");
-          setMessage("재설정 링크를 요청한 브라우저에서 다시 열어 주세요. 링크가 만료되었다면 새 메일을 요청해 주세요.");
-          return;
-        }
-      }
-
       const hashParams = new URLSearchParams(window.location.hash.slice(1));
       if (hashParams.get("error")) {
         setStatus("error");
@@ -68,7 +54,7 @@ export function UpdatePasswordForm() {
     }
 
     setStatus("saving");
-    const supabase = createClient();
+    const supabase = createRecoveryClient();
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
