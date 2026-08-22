@@ -23,7 +23,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const { created } = await searchParams;
   const { data: scenarios, error: scenariosError } = await supabase
     .from("scenarios")
-    .select("id, title, category, is_public, created_at, updated_at")
+    .select("id, title, target_group, tags, is_public, created_at, updated_at")
     .eq("author_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -68,13 +68,20 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" key={scenario.id}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-800">
-                    {scenario.category === "STUDENT" ? "학생 모드" : "사회인 모드"}
+                    {targetGroupLabel(scenario.target_group)}
                   </span>
                   <span className={`rounded-full px-3 py-1 text-sm font-bold ${scenario.is_public ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
                     {scenario.is_public ? "공개" : "비공개"}
                   </span>
                 </div>
                 <h2 className="mt-5 text-2xl font-black">{scenario.title}</h2>
+                {scenario.tags.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2" aria-label="상황 태그">
+                    {scenario.tags.map((tag: string) => (
+                      <span className="rounded-lg bg-slate-100 px-3 py-1 text-sm text-slate-700" key={tag}>#{tagLabel(tag)}</span>
+                    ))}
+                  </div>
+                )}
                 <p className="mt-3 text-sm text-slate-600">
                   최근 수정 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}
                 </p>
@@ -96,6 +103,31 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       </section>
     </main>
   );
+}
+
+function targetGroupLabel(targetGroup: string) {
+  const labels: Record<string, string> = {
+    ALL: "전체 대상",
+    CHILD: "어린이",
+    TEEN: "청소년",
+    ADULT: "성인",
+  };
+
+  return labels[targetGroup] ?? "대상 미지정";
+}
+
+function tagLabel(tag: string) {
+  const labels: Record<string, string> = {
+    SCHOOL: "학교",
+    TRANSPORTATION: "교통",
+    COMMUNITY: "지역사회",
+    WORKPLACE: "직장",
+    SAFETY: "안전",
+    COMMUNICATION: "의사소통",
+    EMOTION: "감정조절",
+  };
+
+  return labels[tag] ?? tag;
 }
 
 function SupabaseSetupNotice() {

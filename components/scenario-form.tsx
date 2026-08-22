@@ -8,6 +8,16 @@ type ScenarioFormProps = {
   userId: string;
 };
 
+const tags = [
+  ["SCHOOL", "학교"],
+  ["TRANSPORTATION", "교통"],
+  ["COMMUNITY", "지역사회"],
+  ["WORKPLACE", "직장"],
+  ["SAFETY", "안전"],
+  ["COMMUNICATION", "의사소통"],
+  ["EMOTION", "감정조절"],
+] as const;
+
 export function ScenarioForm({ userId }: ScenarioFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -20,7 +30,8 @@ export function ScenarioForm({ userId }: ScenarioFormProps) {
 
     const form = new FormData(event.currentTarget);
     const title = String(form.get("title")).trim();
-    const category = String(form.get("category"));
+    const targetGroup = String(form.get("targetGroup"));
+    const selectedTags = form.getAll("tags").map(String);
     const isPublic = form.get("isPublic") === "on";
 
     if (!title) {
@@ -32,8 +43,9 @@ export function ScenarioForm({ userId }: ScenarioFormProps) {
     const supabase = createClient();
     const { error } = await supabase.from("scenarios").insert({
       author_id: userId,
-      category,
       is_public: isPublic,
+      tags: selectedTags,
+      target_group: targetGroup,
       title,
     });
 
@@ -65,18 +77,28 @@ export function ScenarioForm({ userId }: ScenarioFormProps) {
         <span className="mt-2 block text-sm font-normal text-slate-600">학생과 교사가 쉽게 알아볼 수 있는 이름을 사용하세요.</span>
       </label>
 
+      <label className="block font-bold">
+        활용 대상 <span className="font-normal text-slate-500">(선택)</span>
+        <select className="mt-2 min-h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 font-normal" defaultValue="ALL" name="targetGroup">
+          <option value="ALL">전체</option>
+          <option value="CHILD">어린이</option>
+          <option value="TEEN">청소년</option>
+          <option value="ADULT">성인</option>
+        </select>
+        <span className="mt-2 block text-sm font-normal text-slate-600">특정 연령에 제한되지 않으면 전체를 선택하세요.</span>
+      </label>
+
       <fieldset>
-        <legend className="font-bold">대상 모드</legend>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="flex min-h-20 cursor-pointer items-center gap-3 rounded-2xl border-2 border-slate-300 p-4 font-bold has-checked:border-[#3157d5] has-checked:bg-blue-50">
-            <input defaultChecked name="category" type="radio" value="STUDENT" />
-            <span>학생 모드<br /><span className="text-sm font-normal text-slate-600">등교·교실·급식실</span></span>
-          </label>
-          <label className="flex min-h-20 cursor-pointer items-center gap-3 rounded-2xl border-2 border-slate-300 p-4 font-bold has-checked:border-[#3157d5] has-checked:bg-blue-50">
-            <input name="category" type="radio" value="ADULT" />
-            <span>사회인 모드<br /><span className="text-sm font-normal text-slate-600">출근·인사·대화</span></span>
-          </label>
+        <legend className="font-bold">상황 태그 <span className="font-normal text-slate-500">(여러 개 선택 가능)</span></legend>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {tags.map(([value, label]) => (
+            <label className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 font-bold has-checked:border-[#3157d5] has-checked:bg-blue-50" key={value}>
+              <input name="tags" type="checkbox" value={value} />
+              {label}
+            </label>
+          ))}
         </div>
+        <p className="mt-2 text-sm text-slate-600">태그는 시나리오를 찾고 분류할 때 사용합니다. 선택하지 않아도 저장할 수 있습니다.</p>
       </fieldset>
 
       <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-5">
