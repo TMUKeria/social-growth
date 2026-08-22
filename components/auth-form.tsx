@@ -18,6 +18,13 @@ export function AuthForm() {
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email"));
     const password = String(form.get("password"));
+    const passwordConfirmation = String(form.get("passwordConfirmation") ?? "");
+
+    if (mode === "signup" && password !== passwordConfirmation) {
+      setMessage("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const supabase = createClient();
@@ -26,12 +33,14 @@ export function AuthForm() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
 
         if (error) {
           setMessage(toKoreanError(error.message));
+        } else if (data.user?.identities?.length === 0) {
+          setMessage("이미 가입된 이메일입니다. 로그인하거나 비밀번호를 재설정해 주세요.");
         } else if (data.session) {
           router.push("/dashboard");
           router.refresh();
@@ -83,8 +92,32 @@ export function AuthForm() {
       </label>
       <label className="block font-bold">
         비밀번호
-        <input className="mt-2 min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 font-normal" name="password" type="password" autoComplete="current-password" minLength={6} required />
+        <input
+          className="mt-2 min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 font-normal"
+          name="password"
+          type="password"
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          aria-describedby={mode === "signup" ? "password-help" : undefined}
+          minLength={6}
+          required
+        />
       </label>
+      {mode === "signup" && (
+        <>
+          <p className="-mt-3 text-sm text-slate-600" id="password-help">비밀번호는 6자 이상 입력해 주세요.</p>
+          <label className="block font-bold">
+            비밀번호 확인
+            <input
+              className="mt-2 min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 font-normal"
+              name="passwordConfirmation"
+              type="password"
+              autoComplete="new-password"
+              minLength={6}
+              required
+            />
+          </label>
+        </>
+      )}
       <button className="min-h-14 w-full rounded-xl bg-[#3157d5] px-5 text-lg font-black text-white hover:bg-[#2543a9] disabled:opacity-60" disabled={loading} type="submit">
         {loading ? "처리 중..." : mode === "login" ? "로그인" : "교사 계정 만들기"}
       </button>
@@ -100,6 +133,7 @@ function toKoreanError(message: string) {
     "Email not confirmed": "이메일 인증을 먼저 완료해 주세요.",
     "User already registered": "이미 가입된 이메일입니다.",
     "Password should be at least 6 characters": "비밀번호는 6자 이상이어야 합니다.",
+    "Email rate limit exceeded": "인증 메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.",
   };
 
   return errors[message] ?? message;

@@ -9,6 +9,9 @@ export default function LoginPage() {
         <h1 className="mt-2 text-3xl font-black">교사 계정</h1>
         <p className="mt-3 leading-7 text-slate-600">로그인하거나 새 계정을 만들어 시나리오를 관리하세요.</p>
         <AuthForm />
+        <Link className="mt-2 block text-center font-bold text-slate-700 underline" href="/forgot-password">
+          아이디·비밀번호 찾기
+        </Link>
         <Link className="mt-3 block text-center font-bold text-[#3157d5] underline" href="/">
           처음으로 돌아가기
         </Link>
