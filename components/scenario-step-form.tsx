@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 type ScenarioStepFormProps = {
   nextStepOrder: number;
   scenarioId: string;
+  startOpen: boolean;
 };
 
 type ChoiceDraft = {
@@ -16,8 +17,9 @@ type ChoiceDraft = {
 
 const emptyChoice = (): ChoiceDraft => ({ feedback: "", text: "" });
 
-export function ScenarioStepForm({ nextStepOrder, scenarioId }: ScenarioStepFormProps) {
+export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: ScenarioStepFormProps) {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(startOpen);
   const [choices, setChoices] = useState<ChoiceDraft[]>([emptyChoice(), emptyChoice()]);
   const [correctChoice, setCorrectChoice] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -113,7 +115,23 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId }: ScenarioStepForm
     setCorrectChoice(0);
     setMessage("상황과 선택지를 저장했습니다.");
     setLoading(false);
+    setIsOpen(false);
     router.refresh();
+  }
+
+  if (!isOpen) {
+    return (
+      <button
+        className="mt-6 min-h-14 w-full rounded-xl border-2 border-dashed border-[#3157d5] px-5 text-lg font-black text-[#3157d5] hover:bg-blue-50"
+        onClick={() => {
+          setMessage("");
+          setIsOpen(true);
+        }}
+        type="button"
+      >
+        + 새 상황 추가
+      </button>
+    );
   }
 
   return (
@@ -147,8 +165,8 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId }: ScenarioStepForm
       <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-amber-50 p-5">
         <input className="mt-1 h-5 w-5" name="isObstacle" type="checkbox" />
         <span>
-          <span className="block font-bold">돌발 상황으로 표시</span>
-          <span className="mt-1 block text-sm font-normal text-slate-600">예상하지 못한 문제에 대처하는 연습이라면 선택하세요.</span>
+          <span className="block font-bold">예상 밖의 상황으로 표시</span>
+          <span className="mt-1 block text-sm font-normal leading-6 text-slate-600">평소 순서와 다르게 갑자기 생긴 변화라면 선택하세요. 예: 엘리베이터 고장, 큰 소리, 버스 노선 변경</span>
         </span>
       </label>
 
@@ -210,6 +228,11 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId }: ScenarioStepForm
       <button className="min-h-14 w-full rounded-xl bg-[#3157d5] px-5 text-lg font-black text-white hover:bg-[#2543a9] disabled:opacity-60" disabled={loading} type="submit">
         {loading ? "저장 중..." : `상황 ${nextStepOrder + 1} 저장`}
       </button>
+      {nextStepOrder > 0 && (
+        <button className="min-h-12 w-full rounded-xl font-bold text-slate-600 underline" onClick={() => setIsOpen(false)} type="button">
+          추가하지 않고 닫기
+        </button>
+      )}
       <p className="min-h-6 text-sm font-bold text-slate-700" aria-live="polite">{message}</p>
     </form>
   );

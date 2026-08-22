@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ScenarioStepForm } from "@/components/scenario-step-form";
+import { ScenarioStepList } from "@/components/scenario-step-list";
 import { createClient } from "@/lib/supabase/server";
 
 type ScenarioEditorPageProps = {
@@ -35,7 +36,9 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
     .eq("scenario_id", scenario.id)
     .order("step_order", { ascending: true });
 
-  const nextStepOrder = steps?.length ?? 0;
+  const nextStepOrder = steps && steps.length > 0
+    ? Math.max(...steps.map((step) => step.step_order)) + 1
+    : 0;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-12">
@@ -64,29 +67,7 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
               저장된 상황을 불러오지 못했습니다. Supabase 테이블과 권한을 확인해 주세요.
             </p>
           ) : steps && steps.length > 0 ? (
-            <ol className="mt-8 space-y-4" aria-label="저장된 상황 목록">
-              {steps.map((step) => {
-                const orderedChoices = [...step.choices].sort((a, b) => a.choice_order - b.choice_order);
-
-                return (
-                  <li className="rounded-2xl border-2 border-slate-200 p-5" key={step.id}>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-800">상황 {step.step_order + 1}</span>
-                      {step.is_obstacle && <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-900">돌발 상황</span>}
-                    </div>
-                    <h2 className="mt-3 text-xl font-black">{step.title}</h2>
-                    <p className="mt-2 leading-7 text-slate-600">{step.description}</p>
-                    <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-                      {orderedChoices.map((choice) => (
-                        <li className={`rounded-xl px-4 py-3 text-sm font-bold ${choice.is_correct ? "bg-emerald-50 text-emerald-900" : "bg-slate-100 text-slate-700"}`} key={choice.id}>
-                          {choice.is_correct ? "정답 · " : ""}{choice.text}
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                );
-              })}
-            </ol>
+            <ScenarioStepList steps={steps} />
           ) : (
             <div className="mt-8 rounded-2xl border-2 border-dashed border-slate-300 px-5 py-8 text-center">
               <p className="font-black">아직 저장된 상황이 없습니다.</p>
@@ -98,7 +79,7 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
         <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-2xl font-black">새 상황 추가</h2>
           <p className="mt-2 leading-7 text-slate-600">한 상황에 2~3개의 선택지를 만들 수 있으며, 정답은 하나만 지정합니다.</p>
-          <ScenarioStepForm nextStepOrder={nextStepOrder} scenarioId={scenario.id} />
+          <ScenarioStepForm nextStepOrder={nextStepOrder} scenarioId={scenario.id} startOpen={nextStepOrder === 0} />
         </div>
       </section>
     </main>
