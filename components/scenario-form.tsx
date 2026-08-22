@@ -41,13 +41,17 @@ export function ScenarioForm({ userId }: ScenarioFormProps) {
     }
 
     const supabase = createClient();
-    const { error } = await supabase.from("scenarios").insert({
-      author_id: userId,
-      is_public: isPublic,
-      tags: selectedTags,
-      target_group: targetGroup,
-      title,
-    });
+    const { data: scenario, error } = await supabase
+      .from("scenarios")
+      .insert({
+        author_id: userId,
+        is_public: isPublic,
+        tags: selectedTags,
+        target_group: targetGroup,
+        title,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       setMessage(
@@ -59,7 +63,7 @@ export function ScenarioForm({ userId }: ScenarioFormProps) {
       return;
     }
 
-    router.push("/dashboard?created=1");
+    router.push(`/dashboard/scenarios/${scenario.id}?created=1`);
     router.refresh();
   }
 
