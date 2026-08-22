@@ -85,9 +85,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <p className="mt-3 text-sm text-slate-600">
                   최근 수정 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}
                 </p>
-                <p className="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600">
-                  다음 단계에서 상황·선택지 편집 기능이 연결됩니다.
-                </p>
+                <Link
+                  className="mt-6 inline-flex min-h-12 items-center rounded-xl border-2 border-[#3157d5] px-5 font-black text-[#3157d5] hover:bg-blue-50"
+                  href={`/dashboard/scenarios/${scenario.id}`}
+                >
+                  상황·선택지 편집
+                </Link>
               </article>
             ))}
           </div>
