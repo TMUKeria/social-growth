@@ -28,6 +28,7 @@ type ScenarioStepListProps = {
 export function ScenarioStepList({ steps }: ScenarioStepListProps) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [addingChoice, setAddingChoice] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
@@ -60,6 +61,8 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
     const description = String(formData.get("description") ?? "").trim();
     const isObstacle = formData.get("isObstacle") === "on";
     const correctChoiceId = String(formData.get("correctChoice") ?? "");
+    const newChoiceText = String(formData.get("newChoice") ?? "").trim();
+    const newChoiceFeedback = String(formData.get("newChoiceFeedback") ?? "").trim();
     const choices = step.choices.map((choice) => ({
       ...choice,
       feedback_text: String(formData.get(`feedback-${choice.id}`) ?? "").trim(),
@@ -67,7 +70,12 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
       text: String(formData.get(`choice-${choice.id}`) ?? "").trim(),
     }));
 
-    if (!title || !description || choices.some((choice) => !choice.text || !choice.feedback_text)) {
+    if (
+      !title
+      || !description
+      || choices.some((choice) => !choice.text || !choice.feedback_text)
+      || (addingChoice && (!newChoiceText || !newChoiceFeedback))
+    ) {
       setMessage("수정할 내용과 모든 선택지·피드백을 입력해 주세요.");
       setSavingId(null);
       return;
@@ -91,6 +99,23 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
       return;
     }
 
+    if (addingChoice) {
+      const nextChoiceOrder = Math.max(...step.choices.map((choice) => choice.choice_order)) + 1;
+      const { error: newChoiceError } = await supabase.from("choices").insert({
+        choice_order: nextChoiceOrder,
+        feedback_text: newChoiceFeedback,
+        is_correct: correctChoiceId === "new-choice",
+        step_id: step.id,
+        text: newChoiceText,
+      });
+
+      if (newChoiceError) {
+        setMessage("새 선택지를 추가하지 못했습니다. 다시 시도해 주세요.");
+        setSavingId(null);
+        return;
+      }
+    }
+
     const { error: stepError } = await supabase
       .from("steps")
       .update({ description, is_obstacle: isObstacle, title })
@@ -103,6 +128,7 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
     }
 
     setEditingId(null);
+    setAddingChoice(false);
     setMessage("수정 내용을 저장했습니다.");
     router.refresh();
   }
@@ -140,9 +166,25 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
                       <textarea className="mt-3 min-h-24 w-full rounded-xl border-2 border-slate-300 px-4 py-3" defaultValue={choice.feedback_text} maxLength={300} name={`feedback-${choice.id}`} required />
                     </fieldset>
                   ))}
+                  {addingChoice && (
+                    <fieldset className="rounded-xl border-2 border-dashed border-[#3157d5] bg-blue-50 p-4">
+                      <legend className="font-black">새 선택지 {orderedChoices.length + 1}</legend>
+                      <label className="mt-2 flex items-center gap-2 font-bold text-emerald-800">
+                        <input name="correctChoice" type="radio" value="new-choice" /> 정답으로 설정
+                      </label>
+                      <input className="mt-3 min-h-12 w-full rounded-xl border-2 border-slate-300 px-4" maxLength={150} name="newChoice" placeholder="새 선택지 문구" required />
+                      <textarea className="mt-3 min-h-24 w-full rounded-xl border-2 border-slate-300 px-4 py-3" maxLength={300} name="newChoiceFeedback" placeholder="이 선택지를 골랐을 때 보여줄 피드백" required />
+                      <button className="mt-3 font-bold text-slate-600 underline" onClick={() => setAddingChoice(false)} type="button">새 선택지 취소</button>
+                    </fieldset>
+                  )}
+                  {orderedChoices.length < 3 && !addingChoice && (
+                    <button className="min-h-12 w-full rounded-xl border-2 border-dashed border-[#3157d5] font-black text-[#3157d5] hover:bg-blue-50" onClick={() => setAddingChoice(true)} type="button">
+                      + 세 번째 선택지 추가
+                    </button>
+                  )}
                   <div className="flex flex-wrap gap-3">
                     <button className="min-h-12 rounded-xl bg-[#3157d5] px-5 font-black text-white disabled:opacity-60" disabled={savingId === step.id} type="submit">{savingId === step.id ? "저장 중..." : "수정 저장"}</button>
-                    <button className="min-h-12 rounded-xl px-5 font-bold text-slate-600 underline" onClick={() => setEditingId(null)} type="button">취소</button>
+                    <button className="min-h-12 rounded-xl px-5 font-bold text-slate-600 underline" onClick={() => { setEditingId(null); setAddingChoice(false); }} type="button">취소</button>
                   </div>
                 </form>
               ) : (
@@ -153,7 +195,7 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
                       {step.is_obstacle && <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-900">예상 밖의 상황</span>}
                     </div>
                     <div className="flex gap-3">
-                      <button className="font-bold text-[#3157d5] underline" onClick={() => setEditingId(step.id)} type="button">수정</button>
+                      <button className="font-bold text-[#3157d5] underline" onClick={() => { setEditingId(step.id); setAddingChoice(false); }} type="button">수정</button>
                       <button className="font-bold text-red-700 underline disabled:opacity-50" disabled={savingId === step.id} onClick={() => deleteStep(step)} type="button">삭제</button>
                     </div>
                   </div>
