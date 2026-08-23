@@ -26,6 +26,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
   const [correctChoice, setCorrectChoice] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -37,7 +38,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
-    setMessage("");
+    setImageError("");
 
     if (!file) {
       setImageFile(null);
@@ -50,7 +51,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
       event.target.value = "";
       setImageFile(null);
       setImagePreview(null);
-      setMessage(validationMessage);
+      setImageError(validationMessage);
       return;
     }
 
@@ -94,6 +95,12 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
       feedback: choice.feedback.trim(),
       text: choice.text.trim(),
     }));
+
+    if (imageError) {
+      setMessage("그림 오류를 해결하거나 `그림 없이 계속`을 선택해 주세요.");
+      setLoading(false);
+      return;
+    }
 
     if (!title || !description) {
       setMessage("상황 제목과 설명을 모두 입력해 주세요.");
@@ -177,6 +184,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
     setCorrectChoice(0);
     setImageFile(null);
     setImagePreview(null);
+    setImageError("");
     setMessage("상황과 선택지를 저장했습니다.");
     setLoading(false);
     setIsOpen(false);
@@ -238,6 +246,21 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
           />
         </label>
         <p className="mt-2 text-sm leading-6 text-slate-600">JPG, PNG, WEBP, GIF · 최대 5MB</p>
+        {imageError && (
+          <div className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 p-4" role="alert">
+            <p className="font-black text-red-800">{imageError}</p>
+            <button
+              className="mt-3 min-h-10 rounded-lg border-2 border-red-300 bg-white px-4 font-bold text-red-700"
+              onClick={() => {
+                setImageError("");
+                setMessage("");
+              }}
+              type="button"
+            >
+              그림 없이 계속
+            </button>
+          </div>
+        )}
         <p className="mt-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold leading-6 text-red-800">학생 얼굴, 이름표 등 개인정보가 보이는 사진은 올리지 마세요.</p>
         {imagePreview && (
           <div className="relative mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
@@ -309,7 +332,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
         </button>
       )}
 
-      <button className="min-h-14 w-full rounded-xl bg-[#3157d5] px-5 text-lg font-black text-white hover:bg-[#2543a9] disabled:opacity-60" disabled={loading} type="submit">
+      <button className="min-h-14 w-full rounded-xl bg-[#3157d5] px-5 text-lg font-black text-white hover:bg-[#2543a9] disabled:cursor-not-allowed disabled:opacity-60" disabled={loading || Boolean(imageError)} type="submit">
         {loading ? "저장 중..." : `상황 ${nextStepOrder + 1} 저장`}
       </button>
       {nextStepOrder > 0 && (

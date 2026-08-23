@@ -33,6 +33,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState("");
   const [removeImageSelected, setRemoveImageSelected] = useState(false);
   const [addingChoice, setAddingChoice] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
     setAddingChoice(false);
     setEditImagePreview(step.image_url);
     setRemoveImageSelected(false);
+    setImageError("");
     setMessage("");
   }
 
@@ -53,6 +55,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
     setAddingChoice(false);
     setEditImagePreview(null);
     setRemoveImageSelected(false);
+    setImageError("");
   }
 
   function clearBlobPreview() {
@@ -64,7 +67,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
   function handleEditImageChange(event: ChangeEvent<HTMLInputElement>, step: ScenarioStep) {
     const file = event.target.files?.[0] ?? null;
     clearBlobPreview();
-    setMessage("");
+    setImageError("");
 
     if (!file) {
       setEditImagePreview(step.image_url);
@@ -76,7 +79,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
     if (validationMessage) {
       event.target.value = "";
       setEditImagePreview(step.image_url);
-      setMessage(validationMessage);
+      setImageError(validationMessage);
       return;
     }
 
@@ -126,6 +129,12 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
       is_correct: choice.id === correctChoiceId,
       text: String(formData.get(`choice-${choice.id}`) ?? "").trim(),
     }));
+
+    if (imageError) {
+      setMessage("그림 오류를 해결하거나 `그림 없이 계속`을 선택해 주세요.");
+      setSavingId(null);
+      return;
+    }
 
     if (
       !title
@@ -250,6 +259,21 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                     )}
                     <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" name="image" onChange={(event) => handleEditImageChange(event, step)} type="file" />
                     <p className="mt-2 text-sm text-slate-600">새 파일을 선택하면 기존 그림을 교체합니다. 최대 5MB</p>
+                    {imageError && (
+                      <div className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 p-4" role="alert">
+                        <p className="font-black text-red-800">{imageError}</p>
+                        <button
+                          className="mt-3 min-h-10 rounded-lg border-2 border-red-300 bg-white px-4 font-bold text-red-700"
+                          onClick={() => {
+                            setImageError("");
+                            setMessage("");
+                          }}
+                          type="button"
+                        >
+                          그림 없이 계속
+                        </button>
+                      </div>
+                    )}
                     {step.image_url && (
                       <div className="mt-3">
                         <input name="removeImage" type="hidden" value={removeImageSelected ? "on" : ""} />
@@ -298,7 +322,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                     </button>
                   )}
                   <div className="flex flex-wrap gap-3">
-                    <button className="min-h-12 rounded-xl bg-[#3157d5] px-5 font-black text-white disabled:opacity-60" disabled={savingId === step.id} type="submit">{savingId === step.id ? "저장 중..." : "수정 저장"}</button>
+                    <button className="min-h-12 rounded-xl bg-[#3157d5] px-5 font-black text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={savingId === step.id || Boolean(imageError)} type="submit">{savingId === step.id ? "저장 중..." : "수정 저장"}</button>
                     <button className="min-h-12 rounded-xl px-5 font-bold text-slate-600 underline" onClick={closeEditor} type="button">취소</button>
                   </div>
                 </form>
