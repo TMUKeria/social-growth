@@ -18,7 +18,7 @@ export function LogoutButton() {
 
   return (
     <button
-      className="min-h-11 rounded-xl border-2 border-slate-300 bg-white px-5 font-bold hover:bg-slate-50 disabled:opacity-60"
+      className="min-h-11 rounded-xl border-2 border-slate-950 bg-slate-950 px-5 font-bold text-white hover:bg-slate-800 disabled:opacity-60"
       disabled={loading}
       onClick={handleLogout}
       type="button"

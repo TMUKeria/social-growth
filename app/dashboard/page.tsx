@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/logout-button";
+import { ScenarioDeleteButton } from "@/components/scenario-delete-button";
+import { ScenarioVisibilityControl } from "@/components/scenario-visibility-control";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,9 +23,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const { created, saved } = await searchParams;
+  const { data: profile } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle();
   const { data: scenarios, error: scenariosError } = await supabase
     .from("scenarios")
-    .select("id, title, target_group, tags, is_public, created_at, updated_at")
+    .select("id, title, target_group, tags, is_public, author_name, created_at, updated_at")
     .eq("author_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -36,6 +39,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <span className="hidden text-sm text-slate-600 sm:inline">{user.email}</span>
             <LogoutButton />
           </div>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <div>
+            <p className="font-black">공개 작성자 닉네임</p>
+            <p className="mt-1 text-sm text-slate-700">현재 닉네임: {profile?.nickname ?? "아직 설정하지 않음"}</p>
+          </div>
+          <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white" href="/dashboard/profile">닉네임 변경</Link>
         </div>
       </header>
 
@@ -91,12 +102,18 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <p className="mt-3 text-sm text-slate-600">
                   최근 수정 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}
                 </p>
-                <Link
-                  className="mt-6 inline-flex min-h-12 items-center rounded-xl border-2 border-[#3157d5] px-5 font-black text-[#3157d5] hover:bg-blue-50"
-                  href={`/dashboard/scenarios/${scenario.id}`}
-                >
-                  상황·선택지 편집
-                </Link>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link className="inline-flex min-h-12 items-center rounded-xl border-2 border-[#3157d5] px-5 font-black text-[#3157d5] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
+                    상황·선택지 편집
+                  </Link>
+                  <Link className="inline-flex min-h-12 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white hover:bg-[#2543a9]" href={`/play/${scenario.id}?from=dashboard`}>
+                    {scenario.is_public ? "문제풀기" : "비공개 문제풀기"}
+                  </Link>
+                </div>
+                <div className="mt-4 flex flex-wrap items-start justify-between gap-3 border-t border-slate-200 pt-4">
+                  <ScenarioVisibilityControl authorName={scenario.author_name} isPublic={scenario.is_public} scenarioId={scenario.id} userId={user.id} />
+                  <ScenarioDeleteButton scenarioId={scenario.id} scenarioTitle={scenario.title} />
+                </div>
               </article>
             ))}
           </div>
@@ -109,6 +126,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </Link>
           </div>
         )}
+        <Link className="mt-10 inline-block font-bold text-[#3157d5] underline" href="/">처음으로 돌아가기</Link>
       </section>
     </main>
   );

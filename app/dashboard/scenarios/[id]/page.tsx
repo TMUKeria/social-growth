@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ScenarioCompleteButton } from "@/components/scenario-complete-button";
 import { ScenarioStepForm } from "@/components/scenario-step-form";
 import { ScenarioStepList } from "@/components/scenario-step-list";
+import { ScenarioVisibilityControl } from "@/components/scenario-visibility-control";
 import { createClient } from "@/lib/supabase/server";
 
 type ScenarioEditorPageProps = {
@@ -22,7 +23,7 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
   const { created } = await searchParams;
   const { data: scenario } = await supabase
     .from("scenarios")
-    .select("id, title, is_public")
+    .select("id, title, is_public, author_name")
     .eq("id", id)
     .eq("author_id", user.id)
     .maybeSingle();
@@ -55,6 +56,17 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
             <span className={`rounded-full px-4 py-2 text-sm font-bold ${scenario.is_public ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
               {scenario.is_public ? "공개" : "비공개"}
             </span>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-start gap-4 rounded-2xl bg-slate-50 p-5">
+            <div className="min-w-64 flex-1">
+              <p className="font-black">학생 화면 확인</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">비공개 상태에서도 로그인한 작성자는 문제를 직접 풀어볼 수 있습니다.</p>
+            </div>
+            <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white" href={`/play/${scenario.id}?from=dashboard`}>
+              {scenario.is_public ? "문제풀기" : "비공개 문제풀기"}
+            </Link>
+            <ScenarioVisibilityControl authorName={scenario.author_name} isPublic={scenario.is_public} scenarioId={scenario.id} userId={user.id} />
           </div>
 
           {created === "1" && (
