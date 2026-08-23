@@ -27,6 +27,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState("");
+  const [imageInputKey, setImageInputKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -241,6 +242,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
           <input
             accept={scenarioImageRules.accept}
             className="mt-2 block min-h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-normal file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:font-bold file:text-[#3157d5]"
+            key={imageInputKey}
             onChange={handleImageChange}
             type="file"
           />
@@ -263,8 +265,22 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
         )}
         <p className="mt-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold leading-6 text-red-800">학생 얼굴, 이름표 등 개인정보가 보이는 사진은 올리지 마세요.</p>
         {imagePreview && (
-          <div className="relative mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
-            <Image alt="선택한 상황 그림 미리보기" className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={imagePreview} unoptimized />
+          <div className="mt-4">
+            <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-100">
+              <Image alt="선택한 상황 그림 미리보기" className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={imagePreview} unoptimized />
+            </div>
+            <button
+              className="mt-3 min-h-11 rounded-xl border-2 border-red-300 bg-red-50 px-4 font-black text-red-700"
+              onClick={() => {
+                setImageFile(null);
+                setImagePreview(null);
+                setImageError("");
+                setImageInputKey((current) => current + 1);
+              }}
+              type="button"
+            >
+              선택한 그림 삭제
+            </button>
           </div>
         )}
       </fieldset>
@@ -332,7 +348,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
         </button>
       )}
 
-      <button className="min-h-14 w-full rounded-xl bg-[#3157d5] px-5 text-lg font-black text-white hover:bg-[#2543a9] disabled:cursor-not-allowed disabled:opacity-60" disabled={loading || Boolean(imageError)} type="submit">
+      <button className="min-h-14 w-full rounded-xl bg-[#3157d5] px-5 text-lg font-black text-white hover:bg-[#2543a9] disabled:cursor-not-allowed disabled:opacity-60" disabled={loading} type="submit">
         {loading ? "저장 중..." : `상황 ${nextStepOrder + 1} 저장`}
       </button>
       {nextStepOrder > 0 && (

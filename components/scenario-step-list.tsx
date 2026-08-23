@@ -34,6 +34,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState("");
+  const [imageInputKey, setImageInputKey] = useState(0);
   const [removeImageSelected, setRemoveImageSelected] = useState(false);
   const [addingChoice, setAddingChoice] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
     setEditImagePreview(step.image_url);
     setRemoveImageSelected(false);
     setImageError("");
+    setImageInputKey((current) => current + 1);
     setMessage("");
   }
 
@@ -56,6 +58,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
     setEditImagePreview(null);
     setRemoveImageSelected(false);
     setImageError("");
+    setImageInputKey((current) => current + 1);
   }
 
   function clearBlobPreview() {
@@ -257,7 +260,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                         <Image alt={`${step.title} 상황 그림 미리보기`} className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={editImagePreview} unoptimized={editImagePreview.startsWith("blob:")} />
                       </div>
                     )}
-                    <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" name="image" onChange={(event) => handleEditImageChange(event, step)} type="file" />
+                    <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" key={imageInputKey} name="image" onChange={(event) => handleEditImageChange(event, step)} type="file" />
                     <p className="mt-2 text-sm text-slate-600">새 파일을 선택하면 기존 그림을 교체합니다. 최대 5MB</p>
                     {imageError && (
                       <div className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 p-4" role="alert">
@@ -267,14 +270,31 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                           onClick={() => {
                             setImageError("");
                             setMessage("");
+                            setEditImagePreview(step.image_url);
+                            setImageInputKey((current) => current + 1);
                           }}
                           type="button"
                         >
-                          그림 없이 계속
+                          {step.image_url ? "기존 그림 유지" : "그림 없이 계속"}
                         </button>
                       </div>
                     )}
-                    {step.image_url && (
+                    {editImagePreview?.startsWith("blob:") && (
+                      <button
+                        className="mt-3 min-h-11 rounded-xl border-2 border-red-300 bg-red-50 px-4 font-black text-red-700"
+                        onClick={() => {
+                          clearBlobPreview();
+                          setEditImagePreview(step.image_url);
+                          setImageError("");
+                          setRemoveImageSelected(false);
+                          setImageInputKey((current) => current + 1);
+                        }}
+                        type="button"
+                      >
+                        선택한 그림 삭제
+                      </button>
+                    )}
+                    {step.image_url && !editImagePreview?.startsWith("blob:") && (
                       <div className="mt-3">
                         <input name="removeImage" type="hidden" value={removeImageSelected ? "on" : ""} />
                         <button
@@ -322,7 +342,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                     </button>
                   )}
                   <div className="flex flex-wrap gap-3">
-                    <button className="min-h-12 rounded-xl bg-[#3157d5] px-5 font-black text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={savingId === step.id || Boolean(imageError)} type="submit">{savingId === step.id ? "저장 중..." : "수정 저장"}</button>
+                    <button className="min-h-12 rounded-xl bg-[#3157d5] px-5 font-black text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={savingId === step.id} type="submit">{savingId === step.id ? "저장 중..." : "수정 저장"}</button>
                     <button className="min-h-12 rounded-xl px-5 font-bold text-slate-600 underline" onClick={closeEditor} type="button">취소</button>
                   </div>
                 </form>
