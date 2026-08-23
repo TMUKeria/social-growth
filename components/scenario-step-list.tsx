@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { removeScenarioImage, scenarioImageRules, uploadScenarioImage, validateScenarioImage } from "@/lib/supabase/scenario-images";
 
 export type ScenarioChoice = {
   choice_order: number;
@@ -16,16 +18,18 @@ export type ScenarioStep = {
   choices: ScenarioChoice[];
   description: string;
   id: string;
+  image_url: string | null;
   is_obstacle: boolean;
   step_order: number;
   title: string;
 };
 
 type ScenarioStepListProps = {
+  scenarioId: string;
   steps: ScenarioStep[];
 };
 
-export function ScenarioStepList({ steps }: ScenarioStepListProps) {
+export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingChoice, setAddingChoice] = useState(false);
@@ -48,6 +52,8 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
       return;
     }
 
+    await removeScenarioImage(supabase, step.image_url);
+
     setMessage("상황을 삭제했습니다.");
     if (editingId === step.id) setEditingId(null);
     router.refresh();
@@ -63,6 +69,9 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
     const correctChoiceId = String(formData.get("correctChoice") ?? "");
     const newChoiceText = String(formData.get("newChoice") ?? "").trim();
     const newChoiceFeedback = String(formData.get("newChoiceFeedback") ?? "").trim();
+    const imageFileValue = formData.get("image");
+    const imageFile = imageFileValue instanceof File && imageFileValue.size > 0 ? imageFileValue : null;
+    const removeImage = formData.get("removeImage") === "on";
     const choices = step.choices.map((choice) => ({
       ...choice,
       feedback_text: String(formData.get(`feedback-${choice.id}`) ?? "").trim(),
@@ -79,6 +88,15 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
       setMessage("수정할 내용과 모든 선택지·피드백을 입력해 주세요.");
       setSavingId(null);
       return;
+    }
+
+    if (imageFile) {
+      const imageValidationMessage = validateScenarioImage(imageFile);
+      if (imageValidationMessage) {
+        setMessage(imageValidationMessage);
+        setSavingId(null);
+        return;
+      }
     }
 
     const supabase = createClient();
@@ -116,15 +134,35 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
       }
     }
 
+    let nextImageUrl = removeImage ? null : step.image_url;
+    let newImagePath: string | null = null;
+
+    if (imageFile) {
+      const uploadResult = await uploadScenarioImage(supabase, scenarioId, step.id, imageFile);
+      if (uploadResult.error || !uploadResult.publicUrl) {
+        setMessage("새 그림을 업로드하지 못했습니다. Storage 설정을 확인해 주세요.");
+        setSavingId(null);
+        return;
+      }
+
+      nextImageUrl = uploadResult.publicUrl;
+      newImagePath = uploadResult.path;
+    }
+
     const { error: stepError } = await supabase
       .from("steps")
-      .update({ description, is_obstacle: isObstacle, title })
+      .update({ description, image_url: nextImageUrl, is_obstacle: isObstacle, title })
       .eq("id", step.id);
 
     setSavingId(null);
     if (stepError) {
+      if (newImagePath) await supabase.storage.from("scenario-images").remove([newImagePath]);
       setMessage("상황 설명을 수정하지 못했습니다. 다시 시도해 주세요.");
       return;
+    }
+
+    if ((removeImage || imageFile) && step.image_url) {
+      await removeScenarioImage(supabase, step.image_url);
     }
 
     setEditingId(null);
@@ -156,6 +194,22 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
                     <input defaultChecked={step.is_obstacle} className="h-5 w-5" name="isObstacle" type="checkbox" />
                     예상 밖의 상황으로 표시
                   </label>
+                  <fieldset className="rounded-xl border-2 border-slate-200 p-4">
+                    <legend className="px-2 font-black">상황 그림</legend>
+                    {step.image_url && (
+                      <div className="relative mb-4 aspect-video overflow-hidden rounded-xl bg-slate-100">
+                        <Image alt={`${step.title} 상황 그림`} className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={step.image_url} />
+                      </div>
+                    )}
+                    <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" name="image" type="file" />
+                    <p className="mt-2 text-sm text-slate-600">새 파일을 선택하면 기존 그림을 교체합니다. 최대 5MB</p>
+                    {step.image_url && (
+                      <label className="mt-3 flex items-center gap-2 font-bold text-red-700">
+                        <input name="removeImage" type="checkbox" /> 현재 그림 삭제
+                      </label>
+                    )}
+                    <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-800">학생 개인정보가 보이는 사진은 올리지 마세요.</p>
+                  </fieldset>
                   {orderedChoices.map((choice, index) => (
                     <fieldset className="rounded-xl bg-slate-50 p-4" key={choice.id}>
                       <legend className="font-black">선택지 {index + 1}</legend>
@@ -201,6 +255,11 @@ export function ScenarioStepList({ steps }: ScenarioStepListProps) {
                   </div>
                   <h2 className="mt-3 text-xl font-black">{step.title}</h2>
                   <p className="mt-2 leading-7 text-slate-600">{step.description}</p>
+                  {step.image_url && (
+                    <div className="relative mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
+                      <Image alt={`${step.title} 상황 그림`} className="object-contain" fill sizes="(max-width: 768px) 100vw, 768px" src={step.image_url} />
+                    </div>
+                  )}
                   <ul className="mt-4 grid gap-2 sm:grid-cols-2">
                     {orderedChoices.map((choice) => (
                       <li className={`rounded-xl px-4 py-3 text-sm font-bold ${choice.is_correct ? "bg-emerald-50 text-emerald-900" : "bg-slate-100 text-slate-700"}`} key={choice.id}>

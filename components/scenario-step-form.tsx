@@ -1,8 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import Image from "next/image";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { scenarioImageRules, uploadScenarioImage, validateScenarioImage } from "@/lib/supabase/scenario-images";
 
 type ScenarioStepFormProps = {
   nextStepOrder: number;
@@ -22,8 +24,39 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
   const [isOpen, setIsOpen] = useState(startOpen);
   const [choices, setChoices] = useState<ChoiceDraft[]>([emptyChoice(), emptyChoice()]);
   const [correctChoice, setCorrectChoice] = useState(0);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    setMessage("");
+
+    if (!file) {
+      setImageFile(null);
+      setImagePreview(null);
+      return;
+    }
+
+    const validationMessage = validateScenarioImage(file);
+    if (validationMessage) {
+      event.target.value = "";
+      setImageFile(null);
+      setImagePreview(null);
+      setMessage(validationMessage);
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
 
   function updateChoice(index: number, field: keyof ChoiceDraft, value: string) {
     setChoices((current) => current.map((choice, choiceIndex) => (
@@ -93,6 +126,32 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
       return;
     }
 
+    let uploadedImagePath: string | null = null;
+    if (imageFile) {
+      const uploadResult = await uploadScenarioImage(supabase, scenarioId, step.id, imageFile);
+
+      if (uploadResult.error || !uploadResult.publicUrl) {
+        await supabase.from("steps").delete().eq("id", step.id);
+        setMessage("그림을 업로드하지 못했습니다. Storage 설정을 확인한 뒤 다시 시도해 주세요.");
+        setLoading(false);
+        return;
+      }
+
+      uploadedImagePath = uploadResult.path;
+      const { error: imageUrlError } = await supabase
+        .from("steps")
+        .update({ image_url: uploadResult.publicUrl })
+        .eq("id", step.id);
+
+      if (imageUrlError) {
+        await supabase.storage.from("scenario-images").remove([uploadedImagePath]);
+        await supabase.from("steps").delete().eq("id", step.id);
+        setMessage("그림 주소를 저장하지 못했습니다. 다시 시도해 주세요.");
+        setLoading(false);
+        return;
+      }
+    }
+
     const { error: choicesError } = await supabase.from("choices").insert(
       normalizedChoices.map((choice, index) => ({
         choice_order: index,
@@ -104,6 +163,9 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
     );
 
     if (choicesError) {
+      if (uploadedImagePath) {
+        await supabase.storage.from("scenario-images").remove([uploadedImagePath]);
+      }
       await supabase.from("steps").delete().eq("id", step.id);
       setMessage("선택지를 저장하지 못했습니다. 입력 내용을 확인하고 다시 시도해 주세요.");
       setLoading(false);
@@ -113,6 +175,8 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
     formElement.reset();
     setChoices([emptyChoice(), emptyChoice()]);
     setCorrectChoice(0);
+    setImageFile(null);
+    setImagePreview(null);
     setMessage("상황과 선택지를 저장했습니다.");
     setLoading(false);
     setIsOpen(false);
@@ -161,6 +225,26 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
           required
         />
       </label>
+
+      <fieldset className="rounded-2xl border-2 border-slate-200 p-5">
+        <legend className="px-2 text-lg font-black">상황 그림 <span className="font-normal text-slate-500">(선택)</span></legend>
+        <label className="mt-2 block font-bold">
+          그림 파일 선택
+          <input
+            accept={scenarioImageRules.accept}
+            className="mt-2 block min-h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-normal file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:font-bold file:text-[#3157d5]"
+            onChange={handleImageChange}
+            type="file"
+          />
+        </label>
+        <p className="mt-2 text-sm leading-6 text-slate-600">JPG, PNG, WEBP, GIF · 최대 5MB</p>
+        <p className="mt-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold leading-6 text-red-800">학생 얼굴, 이름표 등 개인정보가 보이는 사진은 올리지 마세요.</p>
+        {imagePreview && (
+          <div className="relative mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
+            <Image alt="선택한 상황 그림 미리보기" className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={imagePreview} unoptimized />
+          </div>
+        )}
+      </fieldset>
 
       <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-amber-50 p-5">
         <input className="mt-1 h-5 w-5" name="isObstacle" type="checkbox" />

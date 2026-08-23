@@ -32,7 +32,7 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
 
   const { data: steps, error: stepsError } = await supabase
     .from("steps")
-    .select("id, step_order, title, description, is_obstacle, choices(id, choice_order, text, is_correct, feedback_text)")
+    .select("id, step_order, title, description, image_url, is_obstacle, choices(id, choice_order, text, is_correct, feedback_text)")
     .eq("scenario_id", scenario.id)
     .order("step_order", { ascending: true });
 
@@ -67,7 +67,7 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
               저장된 상황을 불러오지 못했습니다. Supabase 테이블과 권한을 확인해 주세요.
             </p>
           ) : steps && steps.length > 0 ? (
-            <ScenarioStepList steps={steps} />
+            <ScenarioStepList scenarioId={scenario.id} steps={steps} />
           ) : (
             <div className="mt-8 rounded-2xl border-2 border-dashed border-slate-300 px-5 py-8 text-center">
               <p className="font-black">아직 저장된 상황이 없습니다.</p>
