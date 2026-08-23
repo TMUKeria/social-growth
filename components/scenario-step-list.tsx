@@ -260,7 +260,13 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                         <Image alt={`${step.title} 상황 그림 미리보기`} className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={editImagePreview} unoptimized={editImagePreview.startsWith("blob:")} />
                       </div>
                     )}
-                    <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" key={imageInputKey} name="image" onChange={(event) => handleEditImageChange(event, step)} type="file" />
+                    <input accept={scenarioImageRules.accept} className="sr-only" id={`edit-step-image-${step.id}`} key={imageInputKey} name="image" onChange={(event) => handleEditImageChange(event, step)} type="file" />
+                    <label
+                      className="inline-flex min-h-12 cursor-pointer items-center rounded-xl border-2 border-[#3157d5] bg-blue-50 px-5 font-black text-[#3157d5] hover:bg-blue-100"
+                      htmlFor={`edit-step-image-${step.id}`}
+                    >
+                      {editImagePreview ? "파일 변경" : "파일 선택"}
+                    </label>
                     <p className="mt-2 text-sm text-slate-600">새 파일을 선택하면 기존 그림을 교체합니다. 최대 5MB</p>
                     {imageError && (
                       <div className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 p-4" role="alert">

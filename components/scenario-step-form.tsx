@@ -239,12 +239,20 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
           그림 파일 선택
           <input
             accept={scenarioImageRules.accept}
-            className="mt-2 block min-h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-normal file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:font-bold file:text-[#3157d5]"
+            className="sr-only"
+            id="new-step-image"
             key={imageInputKey}
             onChange={handleImageChange}
             type="file"
           />
         </label>
+        <label
+          className="mt-2 inline-flex min-h-12 cursor-pointer items-center rounded-xl border-2 border-[#3157d5] bg-blue-50 px-5 font-black text-[#3157d5] hover:bg-blue-100"
+          htmlFor="new-step-image"
+        >
+          {imageFile ? "파일 변경" : "파일 선택"}
+        </label>
+        {imageFile && <p className="mt-2 text-sm font-bold text-slate-700">선택됨: {imageFile.name}</p>}
         <p className="mt-2 text-sm leading-6 text-slate-600">JPG, PNG, WEBP, GIF · 최대 5MB</p>
         {imageError && (
           <div className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 p-4" role="alert">
