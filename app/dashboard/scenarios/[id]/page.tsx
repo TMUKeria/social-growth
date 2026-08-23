@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ScenarioCompleteButton } from "@/components/scenario-complete-button";
 import { ScenarioStepForm } from "@/components/scenario-step-form";
 import { ScenarioStepList } from "@/components/scenario-step-list";
 import { createClient } from "@/lib/supabase/server";
@@ -81,6 +82,8 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
           <p className="mt-2 leading-7 text-slate-600">한 상황에 2~3개의 선택지를 만들 수 있으며, 정답은 하나만 지정합니다.</p>
           <ScenarioStepForm nextStepOrder={nextStepOrder} scenarioId={scenario.id} startOpen={nextStepOrder === 0} />
         </div>
+
+        {steps && steps.length > 0 && <ScenarioCompleteButton scenarioId={scenario.id} />}
       </section>
     </main>
   );

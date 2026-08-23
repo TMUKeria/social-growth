@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { removeScenarioImage, scenarioImageRules, uploadScenarioImage, validateScenarioImage } from "@/lib/supabase/scenario-images";
@@ -32,9 +32,57 @@ type ScenarioStepListProps = {
 export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [removeImageSelected, setRemoveImageSelected] = useState(false);
   const [addingChoice, setAddingChoice] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+
+  function openEditor(step: ScenarioStep) {
+    clearBlobPreview();
+    setEditingId(step.id);
+    setAddingChoice(false);
+    setEditImagePreview(step.image_url);
+    setRemoveImageSelected(false);
+    setMessage("");
+  }
+
+  function closeEditor() {
+    clearBlobPreview();
+    setEditingId(null);
+    setAddingChoice(false);
+    setEditImagePreview(null);
+    setRemoveImageSelected(false);
+  }
+
+  function clearBlobPreview() {
+    if (editImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(editImagePreview);
+    }
+  }
+
+  function handleEditImageChange(event: ChangeEvent<HTMLInputElement>, step: ScenarioStep) {
+    const file = event.target.files?.[0] ?? null;
+    clearBlobPreview();
+    setMessage("");
+
+    if (!file) {
+      setEditImagePreview(step.image_url);
+      setRemoveImageSelected(false);
+      return;
+    }
+
+    const validationMessage = validateScenarioImage(file);
+    if (validationMessage) {
+      event.target.value = "";
+      setEditImagePreview(step.image_url);
+      setMessage(validationMessage);
+      return;
+    }
+
+    setEditImagePreview(URL.createObjectURL(file));
+    setRemoveImageSelected(false);
+  }
 
   async function deleteStep(step: ScenarioStep) {
     if (!window.confirm(`상황 ${step.step_order + 1} '${step.title}'을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.`)) {
@@ -69,9 +117,9 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
     const correctChoiceId = String(formData.get("correctChoice") ?? "");
     const newChoiceText = String(formData.get("newChoice") ?? "").trim();
     const newChoiceFeedback = String(formData.get("newChoiceFeedback") ?? "").trim();
-    const imageFileValue = formData.get("image");
-    const imageFile = imageFileValue instanceof File && imageFileValue.size > 0 ? imageFileValue : null;
     const removeImage = formData.get("removeImage") === "on";
+    const imageFileValue = formData.get("image");
+    const imageFile = !removeImage && imageFileValue instanceof File && imageFileValue.size > 0 ? imageFileValue : null;
     const choices = step.choices.map((choice) => ({
       ...choice,
       feedback_text: String(formData.get(`feedback-${choice.id}`) ?? "").trim(),
@@ -165,8 +213,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
       await removeScenarioImage(supabase, step.image_url);
     }
 
-    setEditingId(null);
-    setAddingChoice(false);
+    closeEditor();
     setMessage("수정 내용을 저장했습니다.");
     router.refresh();
   }
@@ -196,16 +243,25 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                   </label>
                   <fieldset className="rounded-xl border-2 border-slate-200 p-4">
                     <legend className="px-2 font-black">상황 그림</legend>
-                    {step.image_url && (
+                    {editImagePreview && (
                       <div className="relative mb-4 aspect-video overflow-hidden rounded-xl bg-slate-100">
-                        <Image alt={`${step.title} 상황 그림`} className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={step.image_url} />
+                        <Image alt={`${step.title} 상황 그림 미리보기`} className="object-contain" fill sizes="(max-width: 768px) 100vw, 640px" src={editImagePreview} unoptimized={editImagePreview.startsWith("blob:")} />
                       </div>
                     )}
-                    <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" name="image" type="file" />
+                    <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" name="image" onChange={(event) => handleEditImageChange(event, step)} type="file" />
                     <p className="mt-2 text-sm text-slate-600">새 파일을 선택하면 기존 그림을 교체합니다. 최대 5MB</p>
                     {step.image_url && (
                       <label className="mt-3 flex items-center gap-2 font-bold text-red-700">
-                        <input name="removeImage" type="checkbox" /> 현재 그림 삭제
+                        <input
+                          checked={removeImageSelected}
+                          name="removeImage"
+                          onChange={(event) => {
+                            clearBlobPreview();
+                            setRemoveImageSelected(event.target.checked);
+                            setEditImagePreview(event.target.checked ? null : step.image_url);
+                          }}
+                          type="checkbox"
+                        /> 현재 그림 삭제
                       </label>
                     )}
                     <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-800">학생 개인정보가 보이는 사진은 올리지 마세요.</p>
@@ -238,7 +294,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                   )}
                   <div className="flex flex-wrap gap-3">
                     <button className="min-h-12 rounded-xl bg-[#3157d5] px-5 font-black text-white disabled:opacity-60" disabled={savingId === step.id} type="submit">{savingId === step.id ? "저장 중..." : "수정 저장"}</button>
-                    <button className="min-h-12 rounded-xl px-5 font-bold text-slate-600 underline" onClick={() => { setEditingId(null); setAddingChoice(false); }} type="button">취소</button>
+                    <button className="min-h-12 rounded-xl px-5 font-bold text-slate-600 underline" onClick={closeEditor} type="button">취소</button>
                   </div>
                 </form>
               ) : (
@@ -249,7 +305,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                       {step.is_obstacle && <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-900">예상 밖의 상황</span>}
                     </div>
                     <div className="flex gap-3">
-                      <button className="font-bold text-[#3157d5] underline" onClick={() => { setEditingId(step.id); setAddingChoice(false); }} type="button">수정</button>
+                      <button className="font-bold text-[#3157d5] underline" onClick={() => openEditor(step)} type="button">수정</button>
                       <button className="font-bold text-red-700 underline disabled:opacity-50" disabled={savingId === step.id} onClick={() => deleteStep(step)} type="button">삭제</button>
                     </div>
                   </div>

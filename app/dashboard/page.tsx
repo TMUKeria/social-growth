@@ -5,7 +5,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 type DashboardPageProps = {
-  searchParams: Promise<{ created?: string }>;
+  searchParams: Promise<{ created?: string; saved?: string }>;
 };
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
@@ -20,7 +20,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect("/login");
   }
 
-  const { created } = await searchParams;
+  const { created, saved } = await searchParams;
   const { data: scenarios, error: scenariosError } = await supabase
     .from("scenarios")
     .select("id, title, target_group, tags, is_public, created_at, updated_at")
@@ -54,6 +54,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         {created === "1" && (
           <p className="mt-8 rounded-2xl bg-emerald-50 px-5 py-4 font-bold text-emerald-800" role="status">
             새 시나리오를 저장했습니다.
+          </p>
+        )}
+
+        {saved === "1" && (
+          <p className="mt-8 rounded-2xl bg-emerald-50 px-5 py-4 font-bold text-emerald-800" role="status">
+            시나리오 편집을 완료하고 저장했습니다.
           </p>
         )}
 
