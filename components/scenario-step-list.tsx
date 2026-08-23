@@ -251,18 +251,23 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                     <input accept={scenarioImageRules.accept} className="block min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 py-3" name="image" onChange={(event) => handleEditImageChange(event, step)} type="file" />
                     <p className="mt-2 text-sm text-slate-600">새 파일을 선택하면 기존 그림을 교체합니다. 최대 5MB</p>
                     {step.image_url && (
-                      <label className="mt-3 flex items-center gap-2 font-bold text-red-700">
-                        <input
-                          checked={removeImageSelected}
-                          name="removeImage"
-                          onChange={(event) => {
+                      <div className="mt-3">
+                        <input name="removeImage" type="hidden" value={removeImageSelected ? "on" : ""} />
+                        <button
+                          className={`min-h-11 rounded-xl border-2 px-4 font-black ${removeImageSelected ? "border-slate-400 bg-white text-slate-700" : "border-red-300 bg-red-50 text-red-700"}`}
+                          onClick={() => {
                             clearBlobPreview();
-                            setRemoveImageSelected(event.target.checked);
-                            setEditImagePreview(event.target.checked ? null : step.image_url);
+                            setRemoveImageSelected((current) => !current);
+                            setEditImagePreview(removeImageSelected ? step.image_url : null);
                           }}
-                          type="checkbox"
-                        /> 현재 그림 삭제
-                      </label>
+                          type="button"
+                        >
+                          {removeImageSelected ? "그림 삭제 취소" : "현재 그림 삭제"}
+                        </button>
+                        {removeImageSelected && (
+                          <p className="mt-2 text-sm font-bold text-red-700">아직 삭제되지 않았습니다. `수정 저장`을 누르면 실제로 삭제됩니다.</p>
+                        )}
+                      </div>
                     )}
                     <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-800">학생 개인정보가 보이는 사진은 올리지 마세요.</p>
                   </fieldset>
