@@ -9,12 +9,12 @@ const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gi
 const bucketName = "scenario-images";
 
 export function validateScenarioImage(file: File) {
-  if (!allowedTypes.has(file.type)) {
-    return "JPG, PNG, WEBP, GIF 형식의 그림만 올릴 수 있습니다.";
-  }
-
   if (file.size > scenarioImageRules.maxBytes) {
     return "그림 파일은 5MB 이하만 올릴 수 있습니다.";
+  }
+
+  if (!allowedTypes.has(file.type)) {
+    return "JPG, PNG, WEBP, GIF 형식의 그림만 올릴 수 있습니다.";
   }
 
   return null;
