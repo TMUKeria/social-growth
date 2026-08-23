@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/logout-button";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { createClient } from "@/lib/supabase/server";
 
 const features = [
   ["학생 모드", "로그인 없이 큰 버튼과 음성 안내로 일상 상황을 연습해요."],
@@ -6,7 +9,11 @@ const features = [
   ["간편 공유", "완성한 시나리오를 링크나 QR 코드로 바로 공유해요."],
 ];
 
-export default function Home() {
+export default async function Home() {
+  const user = hasSupabaseEnv()
+    ? (await (await createClient()).auth.getUser()).data.user
+    : null;
+
   return (
     <main>
       <section className="bg-[#3157d5] px-6 py-20 text-white">
@@ -21,10 +28,20 @@ export default function Home() {
             <Link className="rounded-2xl bg-[#ffd166] px-7 py-4 text-center text-lg font-black text-[#172033] hover:bg-yellow-300" href="/play">
               학생 모드 시작
             </Link>
-            <Link className="rounded-2xl border-2 border-white bg-white/10 px-7 py-4 text-center text-lg font-black hover:bg-white/20" href="/login">
-              교사 로그인
-            </Link>
+            {user ? (
+              <>
+                <Link className="rounded-2xl border-2 border-white bg-white/10 px-7 py-4 text-center text-lg font-black hover:bg-white/20" href="/dashboard">
+                  교사 대시보드
+                </Link>
+                <LogoutButton />
+              </>
+            ) : (
+              <Link className="rounded-2xl border-2 border-white bg-white/10 px-7 py-4 text-center text-lg font-black hover:bg-white/20" href="/login">
+                교사 로그인
+              </Link>
+            )}
           </div>
+          {user && <p className="mt-4 text-sm font-bold text-blue-100">{user.email} 계정으로 로그인 중</p>}
         </div>
       </section>
 

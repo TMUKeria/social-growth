@@ -47,7 +47,7 @@ Supabase SQL Editor에서 `supabase/migrations` 폴더의 SQL 파일을 파일�
 - [ ] 교사 대시보드와 시나리오 편집기
 - [x] 교사 시나리오 목록 및 기본 정보 생성
 - [x] 고정 모드를 활용 대상·복수 태그 구조로 개선
-- [ ] 동적 학생 플레이 엔진과 TTS
+- [x] 동적 학생 플레이 엔진과 TTS
 - [ ] 공유 URL과 QR 코드
 - [ ] 접근성 테스트 및 Vercel 배포
 
