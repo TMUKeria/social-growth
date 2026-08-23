@@ -50,8 +50,6 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
     const validationMessage = validateScenarioImage(file);
     if (validationMessage) {
       event.target.value = "";
-      setImageFile(null);
-      setImagePreview(null);
       setImageError(validationMessage);
       return;
     }
@@ -97,7 +95,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
       text: choice.text.trim(),
     }));
 
-    if (imageError) {
+    if (imageError && !imageFile) {
       setMessage("그림 오류를 해결하거나 `그림 없이 계속`을 선택해 주세요.");
       setLoading(false);
       return;
@@ -259,7 +257,7 @@ export function ScenarioStepForm({ nextStepOrder, scenarioId, startOpen }: Scena
               }}
               type="button"
             >
-              그림 없이 계속
+              {imageFile ? "선택한 그림 유지" : "그림 없이 계속"}
             </button>
           </div>
         )}
