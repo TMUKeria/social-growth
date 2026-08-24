@@ -110,6 +110,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <div className="w-full md:w-auto md:min-w-72">
                   {filter === "all" && <div className="mb-3"><ScenarioOrderControls isFirst={scenarioIndex === 0} isLast={scenarioIndex === visibleScenarios.length - 1} scenarioId={scenario.id} scenarioTitle={scenario.title} /></div>}
                   <div className="flex items-center justify-end gap-2">
+                  {stepCount > 0 ? <Link className="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#0754c9] px-3 text-sm font-bold text-white hover:bg-[#07378f]" href={`/play/${scenario.id}?from=dashboard`}>▶ 플레이</Link> : <span aria-disabled="true" className="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-lg bg-slate-200 px-3 text-sm font-bold text-slate-500">▶ 플레이</span>}
                   <Link className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[#0754c9] bg-white px-3 text-sm font-bold text-[#0754c9] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
                     ✎ 편집
                   </Link>
