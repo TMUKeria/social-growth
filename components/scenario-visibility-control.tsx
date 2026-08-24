@@ -70,16 +70,16 @@ export function ScenarioVisibilityControl({ canPublish, isPublic, nickname, scen
 
   return (
     isPublic ? (
-      <div>
-        <button className="min-h-11 rounded-xl border-2 border-slate-300 bg-white px-4 font-black text-slate-700 disabled:opacity-60" disabled={loading} onClick={makePrivate} type="button">{loading ? "변경 중..." : "비공개로 변경"}</button>
-        <p className="mt-2 min-h-5 text-sm font-bold text-red-700" aria-live="polite">{message}</p>
+      <div className="min-w-0">
+        <button className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 disabled:opacity-60" disabled={loading} onClick={makePrivate} type="button">{loading ? "변경 중..." : "비공개 전환"}</button>
+        {message && <p className="mt-2 text-xs font-bold text-red-700" aria-live="polite">{message}</p>}
       </div>
     ) : (
-      <div className="w-full max-w-sm rounded-xl bg-emerald-50 p-4">
-        <p className="text-sm font-black text-emerald-950">{canPublish ? "학생이 풀 수 있도록 공개할 수 있습니다." : "상황과 선택지를 만든 뒤 공개할 수 있습니다."}</p>
-        {!nickname && <Link className="mt-3 inline-block font-bold text-[#3157d5] underline" href="/dashboard/profile">닉네임 설정하기</Link>}
-        <button className="mt-3 min-h-11 w-full rounded-xl bg-emerald-700 px-4 font-black text-white disabled:cursor-not-allowed disabled:opacity-50" disabled={loading || !canPublish || !nickname} onClick={makePublic} type="button">{loading ? "공개 중..." : "시나리오 공개"}</button>
-        <p className="mt-2 min-h-5 text-sm font-bold text-red-700" aria-live="polite">{message}</p>
+      <div className="min-w-0">
+        <button className="min-h-10 w-full rounded-lg bg-emerald-700 px-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" disabled={loading || !canPublish || !nickname} onClick={makePublic} type="button">{loading ? "공개 중..." : "공개 전환"}</button>
+        {!nickname && <Link className="mt-2 block text-xs font-bold text-[#3157d5] underline" href="/dashboard/profile">닉네임 설정 필요</Link>}
+        {!canPublish && <p className="mt-2 text-xs font-bold text-slate-500">상황 추가 필요</p>}
+        {message && <p className="mt-2 text-xs font-bold text-red-700" aria-live="polite">{message}</p>}
       </div>
     )
   );

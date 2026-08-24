@@ -9,7 +9,7 @@ type Choice = { id: string; text: string; is_correct: boolean; feedback_text: st
 type Step = { id: string; title: string; description: string; image_url: string | null; choices: Choice[] };
 type Props = { returnHref: string; returnLabel: string; scenarioTitle: string; steps: Step[] };
 const choiceStyles = ["border-[#0754c9] bg-blue-50/40 text-[#123878]", "border-[#65b83e] bg-green-50/40 text-green-950", "border-[#efb400] bg-amber-50/50 text-amber-950"];
-const choiceIcons = ["♟", "●", "?"];
+const choiceIcons = ["👥", "●", "?"];
 
 export function ScenarioPlayer({ returnHref, returnLabel, scenarioTitle, steps }: Props) {
   const [stepIndex, setStepIndex] = useState(0);

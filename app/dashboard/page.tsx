@@ -106,17 +106,19 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                   </div>
                 )}
                 <p className="mt-3 text-sm text-slate-500">상황 {stepCount}개 · 수정일 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}</p></div>
-                <div className="flex flex-wrap items-center gap-2 md:max-w-80 md:justify-end">
-                  {filter === "all" && <ScenarioOrderControls isFirst={scenarioIndex === 0} isLast={scenarioIndex === visibleScenarios.length - 1} scenarioId={scenario.id} scenarioTitle={scenario.title} />}
-                  <Link className="inline-flex min-h-11 items-center rounded-xl border border-[#0754c9] px-4 font-black text-[#0754c9] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
+                <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 md:w-64">
+                  {filter === "all" && <div className="mb-3"><p className="mb-2 text-xs font-bold text-slate-500">목록 순서</p><ScenarioOrderControls isFirst={scenarioIndex === 0} isLast={scenarioIndex === visibleScenarios.length - 1} scenarioId={scenario.id} scenarioTitle={scenario.title} /></div>}
+                  <div className="grid grid-cols-2 gap-2">
+                  <Link className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[#0754c9] bg-white px-3 text-sm font-bold text-[#0754c9] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
                     ✎ 편집
                   </Link>
                   {stepCount > 0 ? (
-                    <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#0754c9] px-4 font-black text-white hover:bg-[#07378f]" href={`/play/${scenario.id}?from=dashboard`}>▶ 플레이</Link>
+                    <Link className="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#0754c9] px-3 text-sm font-bold text-white hover:bg-[#07378f]" href={`/play/${scenario.id}?from=dashboard`}>▶ 플레이</Link>
                   ) : (
-                    <span className="inline-flex min-h-12 cursor-not-allowed items-center rounded-xl bg-slate-200 px-5 font-black text-slate-500">상황 추가 후 문제풀기</span>
+                    <span className="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-lg bg-slate-200 px-2 text-center text-xs font-bold text-slate-500">상황 추가 필요</span>
                   )}
-                <div className="w-full border-t border-slate-200 pt-3">
+                  </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200 pt-2">
                   <ScenarioVisibilityControl canPublish={stepCount > 0} isPublic={scenario.is_public} nickname={profile?.nickname ?? null} scenarioId={scenario.id} />
                   <ScenarioDeleteButton scenarioId={scenario.id} scenarioTitle={scenario.title} />
                 </div></div>

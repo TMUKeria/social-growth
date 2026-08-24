@@ -22,9 +22,9 @@ export function ScenarioOrderControls({ isFirst, isLast, scenarioId, scenarioTit
 
   return (
     <div className="w-full">
-      <div className="flex gap-2">
-        <button aria-label={`${scenarioTitle} 위로 이동`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-35" disabled={isFirst || loading} onClick={() => move(-1)} type="button">↑ 위로</button>
-        <button aria-label={`${scenarioTitle} 아래로 이동`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-35" disabled={isLast || loading} onClick={() => move(1)} type="button">↓ 아래로</button>
+      <div className="grid grid-cols-2 gap-2">
+        <button aria-label={`${scenarioTitle} 위로 이동`} className="min-h-9 rounded-lg border border-slate-300 px-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-35" disabled={isFirst || loading} onClick={() => move(-1)} type="button">↑ 위로</button>
+        <button aria-label={`${scenarioTitle} 아래로 이동`} className="min-h-9 rounded-lg border border-slate-300 px-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-35" disabled={isLast || loading} onClick={() => move(1)} type="button">↓ 아래로</button>
       </div>
       {message && <p className="mt-2 text-xs font-bold text-red-700" role="alert">{message}</p>}
     </div>
