@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { LogoutButton } from "@/components/logout-button";
 import { ScenarioDeleteButton } from "@/components/scenario-delete-button";
+import { ScenarioOrderControls } from "@/components/scenario-order-controls";
 import { ScenarioVisibilityControl } from "@/components/scenario-visibility-control";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -28,9 +29,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const { data: profile } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle();
   const { data: scenarios, error: scenariosError } = await supabase
     .from("scenarios")
-    .select("id, title, target_group, tags, is_public, created_at, updated_at, steps(id, image_url, step_order)")
+    .select("id, title, target_group, tags, is_public, display_order, created_at, updated_at, steps(id, image_url, step_order)")
     .eq("author_id", user.id)
-    .order("updated_at", { ascending: false });
+    .order("display_order", { ascending: true });
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -79,7 +80,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         ) : scenarios && scenarios.length > 0 ? (
           <div className="mt-6 grid gap-4" aria-label="내 시나리오 목록">
-            {scenarios.filter((scenario) => filter === "all" || (filter === "public" ? scenario.is_public : !scenario.is_public)).map((scenario) => {
+            {scenarios.filter((scenario) => filter === "all" || (filter === "public" ? scenario.is_public : !scenario.is_public)).map((scenario, scenarioIndex, visibleScenarios) => {
               const orderedSteps = [...(scenario.steps ?? [])].sort((a, b) => a.step_order - b.step_order);
               const stepCount = orderedSteps.length;
               const thumbnail = orderedSteps.find((step) => step.image_url)?.image_url;
@@ -106,6 +107,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 )}
                 <p className="mt-3 text-sm text-slate-500">상황 {stepCount}개 · 수정일 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}</p></div>
                 <div className="flex flex-wrap items-center gap-2 md:max-w-80 md:justify-end">
+                  {filter === "all" && <ScenarioOrderControls isFirst={scenarioIndex === 0} isLast={scenarioIndex === visibleScenarios.length - 1} scenarioId={scenario.id} scenarioTitle={scenario.title} />}
                   <Link className="inline-flex min-h-11 items-center rounded-xl border border-[#0754c9] px-4 font-black text-[#0754c9] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
                     ✎ 편집
                   </Link>
