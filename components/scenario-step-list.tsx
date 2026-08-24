@@ -113,6 +113,22 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
     router.refresh();
   }
 
+  async function moveStep(step: ScenarioStep, direction: -1 | 1) {
+    setSavingId(step.id);
+    setMessage("");
+    const supabase = createClient();
+    const { error } = await supabase.rpc("move_scenario_step", { direction, step_id: step.id });
+    setSavingId(null);
+
+    if (error) {
+      setMessage("순서를 변경하지 못했습니다. 최신 Supabase SQL을 실행했는지 확인해 주세요.");
+      return;
+    }
+
+    setMessage("상황 순서를 변경했습니다.");
+    router.refresh();
+  }
+
   async function updateStep(step: ScenarioStep, formData: FormData) {
     setSavingId(step.id);
     setMessage("");
@@ -233,7 +249,7 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
   return (
     <>
       <ol className="mt-8 space-y-4" aria-label="저장된 상황 목록">
-        {steps.map((step) => {
+        {steps.map((step, stepIndex) => {
           const orderedChoices = [...step.choices].sort((a, b) => a.choice_order - b.choice_order);
           const isEditing = editingId === step.id;
 
@@ -356,10 +372,12 @@ export function ScenarioStepList({ scenarioId, steps }: ScenarioStepListProps) {
                 <>
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-800">상황 {step.step_order + 1}</span>
+                      <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-800">상황 {stepIndex + 1}</span>
                       {step.is_obstacle && <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-900">예상 밖의 상황</span>}
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button aria-label={`${step.title} 위로 이동`} className="rounded-lg border border-slate-300 px-3 py-1.5 font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-35" disabled={stepIndex === 0 || savingId !== null} onClick={() => moveStep(step, -1)} type="button">↑ 위로</button>
+                      <button aria-label={`${step.title} 아래로 이동`} className="rounded-lg border border-slate-300 px-3 py-1.5 font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-35" disabled={stepIndex === steps.length - 1 || savingId !== null} onClick={() => moveStep(step, 1)} type="button">↓ 아래로</button>
                       <button className="font-bold text-[#3157d5] underline" onClick={() => openEditor(step)} type="button">수정</button>
                       <button className="font-bold text-red-700 underline disabled:opacity-50" disabled={savingId === step.id} onClick={() => deleteStep(step)} type="button">삭제</button>
                     </div>
