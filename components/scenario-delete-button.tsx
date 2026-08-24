@@ -30,9 +30,9 @@ export function ScenarioDeleteButton({ scenarioId, scenarioTitle }: ScenarioDele
   }
 
   return (
-    <div>
-      <button className="min-h-11 rounded-xl border-2 border-red-300 bg-red-50 px-4 font-black text-red-800 hover:bg-red-100 disabled:opacity-60" disabled={loading} onClick={deleteScenario} type="button">{loading ? "삭제 중..." : "시나리오 삭제"}</button>
-      <p className="mt-2 min-h-5 text-sm font-bold text-red-700" aria-live="polite">{message}</p>
+    <div className="min-w-0">
+      <button className="min-h-10 w-full rounded-lg border border-red-300 bg-red-50 px-3 text-sm font-bold text-red-800 hover:bg-red-100 disabled:opacity-60" disabled={loading} onClick={deleteScenario} type="button">{loading ? "삭제 중..." : "삭제"}</button>
+      {message && <p className="mt-2 text-xs font-bold text-red-700" aria-live="polite">{message}</p>}
     </div>
   );
 }

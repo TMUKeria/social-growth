@@ -19,6 +19,7 @@ export function AuthForm() {
     const email = String(form.get("email"));
     const password = String(form.get("password"));
     const passwordConfirmation = String(form.get("passwordConfirmation") ?? "");
+    const nickname = String(form.get("nickname") ?? "").trim();
 
     if (mode === "signup" && password !== passwordConfirmation) {
       setMessage("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
@@ -26,13 +27,30 @@ export function AuthForm() {
       return;
     }
 
+    if (mode === "signup" && nickname.length < 2) {
+      setMessage("닉네임은 2글자 이상 입력해 주세요.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = createClient();
       if (mode === "signup") {
+        const { data: nicknameAvailable, error: nicknameError } = await supabase.rpc("is_nickname_available", { candidate: nickname });
+        if (nicknameError) {
+          setMessage("닉네임 중복 확인 기능을 준비하려면 최신 Supabase SQL을 실행해 주세요.");
+          return;
+        }
+        if (!nicknameAvailable) {
+          setMessage("이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요.");
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
+            data: { nickname },
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
@@ -104,6 +122,11 @@ export function AuthForm() {
       </label>
       {mode === "signup" && (
         <>
+          <label className="block font-bold">
+            공개 닉네임
+            <input className="mt-2 min-h-12 w-full rounded-xl border-2 border-slate-300 px-4 font-normal" maxLength={30} minLength={2} name="nickname" placeholder="예: 햇살 선생님" required />
+            <span className="mt-2 block text-sm font-normal text-slate-600">공개 시나리오의 만든 사람 이름으로 표시됩니다.</span>
+          </label>
           <p className="-mt-3 text-sm text-slate-600" id="password-help">비밀번호는 6자 이상 입력해 주세요.</p>
           <label className="block font-bold">
             비밀번호 확인

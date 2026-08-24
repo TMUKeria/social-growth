@@ -1,13 +1,17 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { LogoutButton } from "@/components/logout-button";
 import { ScenarioDeleteButton } from "@/components/scenario-delete-button";
+import { ScenarioOrderControls } from "@/components/scenario-order-controls";
+import { ScenarioShareButton } from "@/components/scenario-share-button";
 import { ScenarioVisibilityControl } from "@/components/scenario-visibility-control";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 type DashboardPageProps = {
-  searchParams: Promise<{ created?: string; saved?: string }>;
+  searchParams: Promise<{ created?: string; saved?: string; filter?: string }>;
 };
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
@@ -22,42 +26,36 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect("/login");
   }
 
-  const { created, saved } = await searchParams;
+  const { created, saved, filter = "all" } = await searchParams;
   const { data: profile } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle();
   const { data: scenarios, error: scenariosError } = await supabase
     .from("scenarios")
-    .select("id, title, target_group, tags, is_public, author_name, created_at, updated_at")
+    .select("id, title, target_group, tags, is_public, display_order, created_at, updated_at, steps(id, image_url, step_order)")
     .eq("author_id", user.id)
-    .order("updated_at", { ascending: false });
+    .order("display_order", { ascending: true });
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-6 py-4">
+      <header className="brand-gradient px-6 py-4 text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-          <Link className="text-xl font-black text-[#3157d5]" href="/">하루의 선택</Link>
+          <BrandLogo inverse />
+          <nav className="flex items-center gap-6 text-sm font-bold" aria-label="주요 메뉴"><Link className="border-b-2 border-white pb-2" href="/dashboard">내 시나리오</Link><Link className="pb-2 text-white/80 hover:text-white" href="/play">공개 자료</Link></nav>
           <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-slate-600 sm:inline">{user.email}</span>
-            <LogoutButton />
+            <span className="hidden text-sm text-white/80 lg:inline">{profile?.nickname || user.email}</span>
+            <Link className="font-bold text-white underline" href="/dashboard/profile">설정</Link>
+            <LogoutButton inverse />
           </div>
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
-          <div>
-            <p className="font-black">공개 작성자 닉네임</p>
-            <p className="mt-1 text-sm text-slate-700">현재 닉네임: {profile?.nickname ?? "아직 설정하지 않음"}</p>
-          </div>
-          <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white" href="/dashboard/profile">닉네임 변경</Link>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mx-auto max-w-6xl px-5 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
-            <p className="font-bold text-[#3157d5]">교사 대시보드</p>
-            <h1 className="mt-2 text-4xl font-black">내 시나리오</h1>
+            <p className="font-bold text-[#0754c9]">교사 대시보드</p>
+            <h1 className="mt-2 text-4xl font-black text-[#14213d]">내 시나리오</h1>
             <p className="mt-3 text-slate-600">학생에게 필요한 일상 훈련을 만들고 공유하세요.</p>
           </div>
-          <Link className="inline-flex min-h-14 items-center rounded-xl bg-[#3157d5] px-6 text-lg font-black text-white hover:bg-[#2543a9]" href="/dashboard/scenarios/new">
+          <Link className="inline-flex min-h-14 items-center rounded-xl bg-[#0754c9] px-6 text-lg font-black text-white shadow-md hover:bg-[#07378f]" href="/dashboard/scenarios/new">
             + 새 시나리오 만들기
           </Link>
         </div>
@@ -74,16 +72,25 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </p>
         )}
 
+        <div className="mt-8 flex gap-2" aria-label="공개 여부 필터">{[["all", "전체"], ["public", "공개"], ["private", "비공개"]].map(([value, label]) => <Link className={`rounded-xl border px-5 py-2 text-sm font-bold ${filter === value ? "border-[#0754c9] bg-[#0754c9] text-white" : "border-slate-300 bg-white text-slate-700"}`} href={value === "all" ? "/dashboard" : `/dashboard?filter=${value}`} key={value}>{label}</Link>)}</div>
+
         {scenariosError ? (
           <div className="mt-10 rounded-3xl border border-amber-200 bg-amber-50 px-6 py-10">
             <h2 className="text-2xl font-black">시나리오 테이블을 확인해 주세요</h2>
             <p className="mt-3 leading-7 text-slate-700">Supabase 초기 SQL을 실행하지 않았거나 데이터 조회 권한이 올바르지 않습니다.</p>
           </div>
         ) : scenarios && scenarios.length > 0 ? (
-          <div className="mt-10 grid gap-5 md:grid-cols-2" aria-label="내 시나리오 목록">
-            {scenarios.map((scenario) => (
-              <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" key={scenario.id}>
-                <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-6 grid gap-4" aria-label="내 시나리오 목록">
+            {scenarios.filter((scenario) => filter === "all" || (filter === "public" ? scenario.is_public : !scenario.is_public)).map((scenario, scenarioIndex, visibleScenarios) => {
+              const orderedSteps = [...(scenario.steps ?? [])].sort((a, b) => a.step_order - b.step_order);
+              const stepCount = orderedSteps.length;
+              const thumbnail = orderedSteps.find((step) => step.image_url)?.image_url;
+
+              return <article className="app-surface grid items-center gap-5 rounded-2xl p-4 md:grid-cols-[112px_1fr_auto]" key={scenario.id}>
+                <div className="relative h-24 overflow-hidden rounded-xl bg-gradient-to-br from-blue-100 to-sky-50">
+                  {thumbnail ? <Image alt="" className="object-cover" fill sizes="112px" src={thumbnail} /> : <div className="flex h-full items-center justify-center text-4xl" aria-hidden="true">💬</div>}
+                </div>
+                <div><div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-800">
                     {targetGroupLabel(scenario.target_group)}
                   </span>
@@ -91,7 +98,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                     {scenario.is_public ? "공개" : "비공개"}
                   </span>
                 </div>
-                <h2 className="mt-5 text-2xl font-black">{scenario.title}</h2>
+                <h2 className="mt-3 text-xl font-black">{scenario.title}</h2>
                 {scenario.tags.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2" aria-label="상황 태그">
                     {scenario.tags.map((tag: string) => (
@@ -99,23 +106,20 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                     ))}
                   </div>
                 )}
-                <p className="mt-3 text-sm text-slate-600">
-                  최근 수정 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Link className="inline-flex min-h-12 items-center rounded-xl border-2 border-[#3157d5] px-5 font-black text-[#3157d5] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
-                    상황·선택지 편집
+                <p className="mt-3 text-sm text-slate-500">상황 {stepCount}개 · 수정일 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}</p></div>
+                <div className="w-full md:w-auto md:min-w-72">
+                  {filter === "all" && <div className="mb-3"><ScenarioOrderControls isFirst={scenarioIndex === 0} isLast={scenarioIndex === visibleScenarios.length - 1} scenarioId={scenario.id} scenarioTitle={scenario.title} /></div>}
+                  <div className="flex items-center justify-end gap-2">
+                  {stepCount > 0 ? <Link className="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#0754c9] px-3 text-sm font-bold text-white hover:bg-[#07378f]" href={`/play/${scenario.id}?from=dashboard`}>▶ 플레이</Link> : <span aria-disabled="true" className="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-lg bg-slate-200 px-3 text-sm font-bold text-slate-500">▶ 플레이</span>}
+                  <Link className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[#0754c9] bg-white px-3 text-sm font-bold text-[#0754c9] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
+                    ✎ 편집
                   </Link>
-                  <Link className="inline-flex min-h-12 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white hover:bg-[#2543a9]" href={`/play/${scenario.id}?from=dashboard`}>
-                    {scenario.is_public ? "문제풀기" : "비공개 문제풀기"}
-                  </Link>
+                  <ScenarioShareButton isPublic={scenario.is_public} scenarioId={scenario.id} scenarioTitle={scenario.title} />
+                  <details className="relative"><summary aria-label={`${scenario.title} 더보기`} className="flex size-10 cursor-pointer list-none items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-black text-slate-600">⋯</summary><div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-xl"><p className="mb-2 text-xs font-bold text-slate-500">시나리오 관리</p><div className="grid gap-2"><ScenarioVisibilityControl canPublish={stepCount > 0} isPublic={scenario.is_public} nickname={profile?.nickname ?? null} scenarioId={scenario.id} /><ScenarioDeleteButton scenarioId={scenario.id} scenarioTitle={scenario.title} /></div></div></details>
+                  </div>
                 </div>
-                <div className="mt-4 flex flex-wrap items-start justify-between gap-3 border-t border-slate-200 pt-4">
-                  <ScenarioVisibilityControl authorName={scenario.author_name} isPublic={scenario.is_public} scenarioId={scenario.id} userId={user.id} />
-                  <ScenarioDeleteButton scenarioId={scenario.id} scenarioTitle={scenario.title} />
-                </div>
-              </article>
-            ))}
+              </article>;
+            })}
           </div>
         ) : (
           <div className="mt-10 rounded-3xl border-2 border-dashed border-slate-300 bg-white px-6 py-16 text-center">
