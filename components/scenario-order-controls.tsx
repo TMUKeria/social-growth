@@ -21,10 +21,10 @@ export function ScenarioOrderControls({ isFirst, isLast, scenarioId, scenarioTit
   }
 
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-2 gap-2">
-        <button aria-label={`${scenarioTitle} 위로 이동`} className="min-h-9 rounded-lg border border-slate-300 px-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-35" disabled={isFirst || loading} onClick={() => move(-1)} type="button">↑ 위로</button>
-        <button aria-label={`${scenarioTitle} 아래로 이동`} className="min-h-9 rounded-lg border border-slate-300 px-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-35" disabled={isLast || loading} onClick={() => move(1)} type="button">↓ 아래로</button>
+    <div>
+      <div className="flex justify-end gap-1">
+        <button aria-label={`${scenarioTitle} 위로 이동`} className="flex size-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg font-black disabled:cursor-not-allowed disabled:opacity-25" disabled={isFirst || loading} onClick={() => move(-1)} title="위로 이동" type="button">↑</button>
+        <button aria-label={`${scenarioTitle} 아래로 이동`} className="flex size-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg font-black disabled:cursor-not-allowed disabled:opacity-25" disabled={isLast || loading} onClick={() => move(1)} title="아래로 이동" type="button">↓</button>
       </div>
       {message && <p className="mt-2 text-xs font-bold text-red-700" role="alert">{message}</p>}
     </div>
