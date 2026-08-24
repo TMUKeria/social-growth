@@ -26,7 +26,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const { data: profile } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle();
   const { data: scenarios, error: scenariosError } = await supabase
     .from("scenarios")
-    .select("id, title, target_group, tags, is_public, author_name, created_at, updated_at")
+    .select("id, title, target_group, tags, is_public, created_at, updated_at, steps(count)")
     .eq("author_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -37,16 +37,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <Link className="text-xl font-black text-[#3157d5]" href="/">하루의 선택</Link>
           <div className="flex items-center gap-4">
             <span className="hidden text-sm text-slate-600 sm:inline">{user.email}</span>
+            <Link className="font-bold text-[#3157d5] underline" href="/dashboard/profile">설정</Link>
             <LogoutButton />
           </div>
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
-          <div>
-            <p className="font-black">공개 작성자 닉네임</p>
-            <p className="mt-1 text-sm text-slate-700">현재 닉네임: {profile?.nickname ?? "아직 설정하지 않음"}</p>
-          </div>
-          <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white" href="/dashboard/profile">닉네임 변경</Link>
         </div>
       </header>
 
@@ -81,8 +74,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         ) : scenarios && scenarios.length > 0 ? (
           <div className="mt-10 grid gap-5 md:grid-cols-2" aria-label="내 시나리오 목록">
-            {scenarios.map((scenario) => (
-              <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" key={scenario.id}>
+            {scenarios.map((scenario) => {
+              const stepCount = scenario.steps?.[0]?.count ?? 0;
+
+              return <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" key={scenario.id}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-800">
                     {targetGroupLabel(scenario.target_group)}
@@ -102,20 +97,23 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <p className="mt-3 text-sm text-slate-600">
                   최근 수정 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(scenario.updated_at))}
                 </p>
+                <p className="mt-2 text-sm font-bold text-slate-700">등록된 상황 {stepCount}개</p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link className="inline-flex min-h-12 items-center rounded-xl border-2 border-[#3157d5] px-5 font-black text-[#3157d5] hover:bg-blue-50" href={`/dashboard/scenarios/${scenario.id}`}>
                     상황·선택지 편집
                   </Link>
-                  <Link className="inline-flex min-h-12 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white hover:bg-[#2543a9]" href={`/play/${scenario.id}?from=dashboard`}>
-                    {scenario.is_public ? "문제풀기" : "비공개 문제풀기"}
-                  </Link>
+                  {stepCount > 0 ? (
+                    <Link className="inline-flex min-h-12 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white hover:bg-[#2543a9]" href={`/play/${scenario.id}?from=dashboard`}>문제풀기</Link>
+                  ) : (
+                    <span className="inline-flex min-h-12 cursor-not-allowed items-center rounded-xl bg-slate-200 px-5 font-black text-slate-500">상황 추가 후 문제풀기</span>
+                  )}
                 </div>
                 <div className="mt-4 flex flex-wrap items-start justify-between gap-3 border-t border-slate-200 pt-4">
-                  <ScenarioVisibilityControl authorName={scenario.author_name} isPublic={scenario.is_public} scenarioId={scenario.id} userId={user.id} />
+                  <ScenarioVisibilityControl canPublish={stepCount > 0} isPublic={scenario.is_public} nickname={profile?.nickname ?? null} scenarioId={scenario.id} />
                   <ScenarioDeleteButton scenarioId={scenario.id} scenarioTitle={scenario.title} />
                 </div>
-              </article>
-            ))}
+              </article>;
+            })}
           </div>
         ) : (
           <div className="mt-10 rounded-3xl border-2 border-dashed border-slate-300 bg-white px-6 py-16 text-center">

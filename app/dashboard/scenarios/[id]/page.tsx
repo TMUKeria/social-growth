@@ -21,9 +21,10 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
 
   const { id } = await params;
   const { created } = await searchParams;
+  const { data: profile } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle();
   const { data: scenario } = await supabase
     .from("scenarios")
-    .select("id, title, is_public, author_name")
+    .select("id, title, is_public")
     .eq("id", id)
     .eq("author_id", user.id)
     .maybeSingle();
@@ -63,10 +64,12 @@ export default async function ScenarioEditorPage({ params, searchParams }: Scena
               <p className="font-black">학생 화면 확인</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">비공개 상태에서도 로그인한 작성자는 문제를 직접 풀어볼 수 있습니다.</p>
             </div>
-            <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white" href={`/play/${scenario.id}?from=dashboard`}>
-              {scenario.is_public ? "문제풀기" : "비공개 문제풀기"}
-            </Link>
-            <ScenarioVisibilityControl authorName={scenario.author_name} isPublic={scenario.is_public} scenarioId={scenario.id} userId={user.id} />
+            {steps && steps.length > 0 ? (
+              <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3157d5] px-5 font-black text-white" href={`/play/${scenario.id}?from=dashboard`}>문제풀기</Link>
+            ) : (
+              <span className="inline-flex min-h-11 cursor-not-allowed items-center rounded-xl bg-slate-200 px-5 font-black text-slate-500">상황 추가 후 문제풀기</span>
+            )}
+            <ScenarioVisibilityControl canPublish={Boolean(steps?.length)} isPublic={scenario.is_public} nickname={profile?.nickname ?? null} scenarioId={scenario.id} />
           </div>
 
           {created === "1" && (

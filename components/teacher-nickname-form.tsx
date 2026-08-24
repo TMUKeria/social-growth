@@ -27,7 +27,11 @@ export function TeacherNicknameForm({ initialNickname, userId }: TeacherNickname
     const supabase = createClient();
     const { error: profileError } = await supabase.from("profiles").update({ nickname }).eq("id", userId);
     if (profileError) {
-      setMessage("닉네임을 저장하지 못했습니다. 새 마이그레이션을 적용했는지 확인해 주세요.");
+      setMessage(
+        profileError.code === "23505"
+          ? "이미 다른 교사가 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요."
+          : "닉네임을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
       setLoading(false);
       return;
     }
